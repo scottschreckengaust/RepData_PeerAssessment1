@@ -1,3 +1,6 @@
+---
+output: html_document
+---
 # Reproducible Research: Peer Assessment 1
 
 ## Loading and preprocessing the data
@@ -5,9 +8,10 @@ The dataset is stored in a zip file (activity.zip) containing a comma-separated-
 
 The variables included in this dataset are:
 
-* steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+* steps: Number of steps taking in a 5-minute interval 
+(missing values are coded as NA)
 * date: The date on which the measurement was taken in YYYY-MM-DD format
-* interval: Identifier for the 5-minute interval in which measurement was taken
+* interval: Identifier for the 5-minute interval in which measurement was taken.
 
 
 ```r
@@ -38,7 +42,7 @@ print(xsummary, type="html")
 ```
 
 <!-- html table generated in R 3.1.0 by xtable 1.7-3 package -->
-<!-- Sun Jul 20 12:08:41 2014 -->
+<!-- Sun Jul 20 15:52:05 2014 -->
 <TABLE border=1>
 <TR> <TH>  </TH> <TH>     steps </TH> <TH>     date </TH> <TH>    interval </TH>  </TR>
   <TR> <TD align="right"> 1 </TD> <TD> Min.   :  0.0   </TD> <TD> Length:17568       </TD> <TD> Min.   :   0   </TD> </TR>
@@ -52,32 +56,46 @@ print(xsummary, type="html")
 
 
 ```r
-## convert interval to a factor
-## activity$interval <- as.factor(activity$interval)
-## convert date string to a Date
+## Convert the date string to a date.
 activity$date <- as.Date(activity$date, format="%Y-%m-%d")
 ```
 
 ## What is mean total number of steps taken per day?
+*For this part of the assignment, you can ignore the missing values in the dataset.*
 
 ```r
 # Remove NAs.
 activity.nona <- subset(activity,!is.na(steps)) 
 
 # Put into a data table.
-activity.nona <- data.table(activity.nona) 
+activity.nonatable <- data.table(activity.nona) 
 
 # Add up the steps for each date.
-activity.countofstepsperday <- activity.nona[,list(sum=sum(steps)),by=date]
+activity.nonacountofstepsperday <- activity.nonatable[,list(sum=sum(steps)),by=date]
 ```
 
 1. Make a histogram of the total number of steps taken each day
+
+
+```r
+library(ggplot2)
+g1 <- ggplot(activity.nonacountofstepsperday, aes(date, sum)) 
+g1 <- g1 + 
+    geom_histogram(stat="identity", y=sum, aes(fill=sum)) + 
+    xlab("Date") + 
+    ylab("Number of Steps") + 
+    scale_fill_continuous(name="steps")
+g1
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+
 2. Calculate and report the mean and median total number of steps taken per day
 
 ```r
 # Calculate the mean of the steps taken.
-mean.of.steps.taken = mean(activity.countofstepsperday$sum) ## calculate mean from sums
-mean.of.steps.taken
+activity.nonameanofstepstakenperday = mean(activity.nonacountofstepsperday$sum)
+activity.nonameanofstepstakenperday
 ```
 
 ```
@@ -86,8 +104,8 @@ mean.of.steps.taken
 
 ```r
 # Calculate the median of the steps taken.
-median.of.steps.taken = median(activity.countofstepsperday$sum) ## calculate median from sums
-median.of.steps.taken
+activity.nonamedianofstepstakenperday = median(activity.nonacountofstepsperday$sum)
+activity.nonamedianofstepstakenperday
 ```
 
 ```
@@ -95,69 +113,76 @@ median.of.steps.taken
 ```
 
 
-```r
-library(ggplot2)
-g <- ggplot(activity.countofstepsperday, aes(date, sum)) 
-## It appears mean and median values are very close
-mean.steps <- data.frame(yintercept=mean.of.steps.taken, mean=factor(mean.of.steps.taken))
-median.steps <- data.frame(yintercept=median.of.steps.taken, median=factor(median.of.steps.taken))
-
-g + geom_histogram(stat="identity", y=sum, aes(fill=sum)) + xlab("Date") + 
-    ylab("Number of Steps") + theme(legend.position = "right", 
-    legend.title = element_text(), axis.text.x = element_text(angle=90))
-```
-
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
-
-
-
-## What is the average daily activity pattern?
-
-1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
-
-
-2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-
 
 ```r
-activity.no.na <- subset(activity,!is.na(steps)) ## do not include NA
-activity.no.na <- data.table(activity.no.na) ## enable data table subsetting
-activity.no.na <- activity.no.na[,list(average=mean(steps)),by=interval]
-str(activity.no.na)
-```
+activity.nonamedianofstepstakenperdayframe = data.frame(
+    yintercept=activity.nonamedianofstepstakenperday,
+    median=factor(activity.nonamedianofstepstakenperday))
 
-```
-## Classes 'data.table' and 'data.frame':	288 obs. of  2 variables:
-##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
-##  $ average : num  1.717 0.3396 0.1321 0.1509 0.0755 ...
-##  - attr(*, ".internal.selfref")=<externalptr>
-```
+gnonamedian <- geom_hline(aes(yintercept=yintercept, linetype=median), 
+    data=activity.nonamedianofstepstakenperdayframe, 
+    colour="black",
+    show_guide=TRUE)
 
-```r
-g2 <- ggplot(activity.no.na, aes(interval, average, colour=interval) ) +
-      geom_bar(stat="identity") +
-      xlab("Interval") +
-      ylab("Average number of steps")  +
-      theme(legend.position = "none")
-g2
+activity.nonameanofstepstakenperdayframe = data.frame(
+    yintercept=activity.nonameanofstepstakenperday,
+    mean=factor(activity.nonameanofstepstakenperday))
+
+gnonamean <- geom_hline(aes(yintercept=yintercept, linetype=mean),
+    data=activity.nonameanofstepstakenperdayframe,
+    colour="red",
+    show_guide=TRUE)
+
+g1 + gnonamedian + gnonamean + 
+    scale_linetype_manual(name="", 
+    values=c(1,3), 
+    labels=c(
+        paste("median: ", activity.nonamedianofstepstakenperday), 
+        paste("mean: ", round(activity.nonameanofstepstakenperday, 2))
+    )
+    ) + guides(linetype=guide_legend(override.aes=list(colour = c("black","red"))))
 ```
 
 ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
 
-calculate the interval that contains on average the maximum number of steps.
+
+## What is the average daily activity pattern?
+
+1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) 
+and the average number of steps taken, averaged across all days (y-axis)
 
 
 ```r
-maxavg <- activity.no.na$interval[[which.max(activity.no.na$average)]]
-g2 + geom_vline(xintercept=maxavg, colour="yellow", linetype = "longdash")
+activity.nonaaveragestepperinterval <- activity.nonatable[,list(average=mean(steps)),by=interval]
+
+g2 <- ggplot(activity.nonaaveragestepperinterval, aes(interval, average, colour=average) ) +
+      geom_bar(stat="identity") +
+      xlab("Interval") +
+      ylab("Average number of steps") +
+      theme(legend.position = "none")
+g2
 ```
 
 ![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
 
+2. Which 5-minute interval, on average across all the days in the dataset, 
+contains the maximum number of steps?
+
+
+
+
+```r
+## Calculate the interval that contains on average the maximum number of steps.
+activity.maxavg <- activity.nonaaveragestepperinterval$interval[[which.max(activity.nonaaveragestepperinterval$average)]]
+g2 + geom_vline(xintercept=activity.maxavg, colour="red", linetype = "longdash")
+```
+
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+
 
 ```r
 ## printing exact interval
-maxavg
+activity.maxavg
 ```
 
 ```
@@ -169,12 +194,12 @@ Note that there are a number of days/intervals where there are missing values (c
 1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
 ```r
-narows <- nrow(activity) - nrow(activity.no.na)
+narows <- nrow(activity) - nrow(activity.nona)
 narows
 ```
 
 ```
-## [1] 17280
+## [1] 2304
 ```
 
 2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
@@ -194,8 +219,8 @@ impute <- function (df) {
 3.Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
 ```r
-activity.imputed.org <- impute(activity.imputed)
-summary(activity.imputed)
+activity.imputeddata <- impute(activity.imputed)
+summary(activity.imputeddata)
 ```
 
 ```
@@ -204,50 +229,105 @@ summary(activity.imputed)
 ##  1st Qu.:  0.0   1st Qu.:2012-10-16   1st Qu.: 589  
 ##  Median :  0.0   Median :2012-10-31   Median :1178  
 ##  Mean   : 37.4   Mean   :2012-10-31   Mean   :1178  
-##  3rd Qu.: 12.0   3rd Qu.:2012-11-15   3rd Qu.:1766  
-##  Max.   :806.0   Max.   :2012-11-30   Max.   :2355  
-##  NA's   :2304
-```
-
-4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
-
-
-```r
-activity.imputed <- data.table(activity.imputed.org)
-activity.imputed <- activity.imputed[,list(average=mean(steps)),by=interval]
-str(activity.imputed)
-```
-
-```
-## Classes 'data.table' and 'data.frame':	288 obs. of  2 variables:
-##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
-##  $ average : num  6.39 5.2 5.02 5.03 4.97 ...
-##  - attr(*, ".internal.selfref")=<externalptr>
+##  3rd Qu.: 37.4   3rd Qu.:2012-11-15   3rd Qu.:1766  
+##  Max.   :806.0   Max.   :2012-11-30   Max.   :2355
 ```
 
 ```r
-g2 <- ggplot(activity.imputed, aes(interval, average, colour=interval) ) +
-      geom_bar(stat="identity") +
-      xlab("Interval") +
-      ylab("Average nr of steps")  +
-      theme(legend.position = "none")
-g2
+activity.imputedframe <- data.table(activity.imputeddata)
+activity.imputedframebydate <- activity.imputedframe[,list(sum=sum(steps)),by=date]
+activity.imputedframebyinterval <- activity.imputedframe[,list(average=mean(steps)),by=interval]
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
-
+4. Make a histogram of the total number of steps taken each day,  
 
 ```r
-maxavg2 <- activity.imputed$interval[[which.max(activity.imputed$average)]]
-g2 + geom_vline(xintercept=maxavg2, colour="yellow", linetype = "longdash")
+g3 <- ggplot(activity.imputedframebydate, aes(date, sum)) 
+g3 <- g3 + 
+    geom_histogram(stat="identity", y=sum, aes(fill=sum)) + 
+    xlab("Date") + 
+    ylab("Number of Steps") + 
+    scale_fill_continuous(name="steps")
+g3
 ```
 
 ![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
 
+Calculate and report the mean and median total number of steps taken per day.  
+
+
+```r
+activity.imputedmeanofstepstakenperday = mean(activity.imputedframebydate$sum)
+activity.imputedmeanofstepstakenperday
+```
+
+```
+## [1] 10766
+```
+
+```r
+activity.imputedmedianofstepstakenperday = median(activity.imputedframebydate$sum)
+activity.imputedmedianofstepstakenperday
+```
+
+```
+## [1] 10766
+```
+
+```r
+activity.maxavg2 <- activity.imputedframebyinterval$interval[[which.max(activity.imputedframebyinterval$average)]]
+```
+
+Do these values differ from the estimates from the first part of the assignment?  
+activity.
+
+```r
+# Difference in mean without NAs and mean with imputed NAs filled by mean.
+activity.nonameanofstepstakenperday - activity.imputedmeanofstepstakenperday
+```
+
+```
+## [1] 0
+```
+
+```r
+# Difference in median without NAs and median with imputed NAs filled by mean.
+activity.nonamedianofstepstakenperday - activity.imputedmedianofstepstakenperday
+```
+
+```
+## [1] -1.189
+```
+
+```r
+# Difference in the interval
+activity.maxavg - activity.maxavg2
+```
+
+```
+## [1] 0
+```
+What is the impact of imputing missing data on the estimates of the total daily number of steps?  
+
+**No significant impact, as the mean and maximum average intervals have not
+changed, and the change in the median for the steps taken is relatively small.** 
+
+
+```r
+g4 <- ggplot(activity.imputedframebyinterval, aes(interval, average, colour=average) ) +
+      geom_bar(stat="identity") +
+      xlab("Interval") +
+      ylab("Average number of steps") +
+      theme(legend.position = "none")
+g4 + geom_vline(xintercept=activity.maxavg2, colour="red", linetype = "longdash")
+```
+
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-17.png) 
+
 Printing the maximum average on steps
 
 ```r
-maxavg2
+activity.maxavg2
 ```
 
 ```
@@ -257,27 +337,20 @@ maxavg2
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```r
-activity.imputed <- data.table(activity.imputed.org)
-activity.imputed$weekday <- !(as.POSIXlt(activity.imputed$date)$wd %in% c(0,1))
-activity.imputed$average <- activity.imputed[,list(average=mean(steps)),by=interval]$average
-g3 <- ggplot(activity.imputed, aes(x=interval, y=average, group=weekday, colour=interval) ) +
+activity.imputedframe$weekday <- !(as.POSIXlt(activity.imputedframe$date)$wd %in% c(0,1))
+activity.imputedframe$average <- activity.imputedframe[,list(average=mean(steps)),
+    by=interval]$average
+g5 <- ggplot(activity.imputedframe, aes(x=interval, y=average, group=weekday, colour=average) ) +
       geom_bar(stat="identity") +
-      xlab("Interval") +
-      ylab("Average nr of steps")  +
-      ## TODO change facet labels
-      labs(title = "Difference activity Weekday (FALSE) or Weekend (TRUE)") +
+      xlab("5 minute interval") +
+      ylab("Average Number of Steps")  +
+      labs(title = "Activity for Weekday (FALSE) verse Weekend (TRUE)") +
       theme(legend.position = "none") +
       facet_grid(weekday ~ .)
-g3
+g5
 ```
 
-![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
-# ``` {r, echo=FALSE, results='hide'}
-# library(knitr)
-# knit2html("PA1_template.Rmd”)
-# browseURL("PA1_template.html”)
-# ```
-
-A first glance at the data shows that there is more activity in the weekend days.
-
+**There appears more activity on the weekend days, but the pattern of is similiar
+over the daily 24-hour interval steps.**
