@@ -1,20 +1,202 @@
 # Reproducible Research: Peer Assessment 1
 
-
 ## Loading and preprocessing the data
+The dataset is stored in a zip file (activity.zip) containing a comma-separated-value (activity.csv) file and there are a total of 17,568 observations in this dataset.
 
+The variables included in this dataset are:
 
+* steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+* date: The date on which the measurement was taken in YYYY-MM-DD format
+* interval: Identifier for the 5-minute interval in which measurement was taken
+
+``` {r}
+setwd("~/Dropbox/Private/Coursera/Reproducable/RepData_PeerAssessment1")
+if(! file.exists("activity.zip")) {
+    stop("Please checkout: https://github.com/scottschreckengaust/RepData_PeerAssessment1")
+}
+library(data.table)
+library(xtable)
+activity <- read.table(unzip("activity.zip"), header=TRUE, sep=",", stringsAsFactor=FALSE)
+str(activity)
+xsummary <- xtable(summary(activity))
+```
+
+``` {r, results='asis'}
+print(xsummary, type="html")
+```
+
+``` {r}
+## convert interval to a factor
+## activity$interval <- as.factor(activity$interval)
+## convert date string to a Date
+activity$date <- as.Date(activity$date, format="%Y-%m-%d")
+```
 
 ## What is mean total number of steps taken per day?
+1. Make a histogram of the total number of steps taken each day
+2. Calculate and report the mean and median total number of steps taken per day
+
+``` {r fig.width=6, fig.height=6}
+library(ggplot2)
+
+# Remove NAs.
+activity.nona <- subset(activity,!is.na(steps)) 
+
+# Put into a data table.
+activity.nona <- data.table(activity.nona) 
+
+# Add up the steps for each date.
+activity.countofstepsperday <- activity.nona[,list(sum=sum(steps)),by=date]
+
+# Calculate the mean of the steps taken.
+mean.of.steps.taken = mean(activity.countofstepsperday$sum) ## calculate mean from sums
+mean.of.steps.taken
+
+# Calculate the median of the steps taken.
+median.of.steps.taken = median(activity.countofstepsperday$sum) ## calculate median from sums
+median.of.steps.taken
+
+## It appears mean and median values are very close
+g <- ggplot(activity.countofstepsperday, aes(date, sum)) +
+       geom_bar(stat="identity", aes(fill="darkblue", colour="red")) +
+       xlab("Date") +
+       ylab("Total steps") +
+       theme(legend.position = "none") + 
+       geom_line(aes(y=mean.of.steps.taken, col="blue")) +
+       geom_line(aes(y=median.of.steps.taken, col="black"))  
+
+mean.steps <- data.frame(yintercept=mean.of.steps.taken, mean=factor(mean.of.steps.taken))
+median.steps <- data.frame(yintercept=median.of.steps.taken, median=factor(median.of.steps.taken))
+
+g + geom_histogram(stat="identity", y=sum, aes(fill=sum)) + xlab("Date") + ylab("Number of Steps") + theme(legend.position = "right", legend.title = element_text(), axis.text.x = element_text(angle=90)) 
++ geom_hline(aes(yintercept=yintercept, linetype=mean), data=mean.steps, show_guide=TRUE)
+
++ geom_hline(aes(yintercept=yintercept, linetype=median), data=median.steps, show_guide=TRUE)
+
+
+g + geom_histogram(stat="identity", y=sum, aes(fill=sum)) + xlab("Date") + 
+    ylab("Number of Steps") + theme(legend.position = "right", 
+    legend.title = element_text(), axis.text.x = element_text(angle=90)) + 
+    geom_hline(aes(yintercept=yintercept, linetype=mean), 
+    data=mean.steps, show_guide=TRUE) +
+    
+    geom_hline(aes(yintercept=yintercept, linetype=median), 
+    data=median.steps, show_guide=TRUE) + scale_colour_manual(values=c("mean", "median"))
+
+
+
+
+g
+```
 
 
 
 ## What is the average daily activity pattern?
 
+1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
 
+2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+``` {r fig.width=6, fig.height=6}
+activity.no.na <- subset(activity,!is.na(steps)) ## do not include NA
+activity.no.na <- data.table(activity.no.na) ## enable data table subsetting
+activity.no.na <- activity.no.na[,list(average=mean(steps)),by=interval]
+str(activity.no.na)
+g2 <- ggplot(activity.no.na, aes(interval, average, colour=interval) ) +
+      geom_bar(stat="identity") +
+      xlab("Interval") +
+      ylab("Average nr of steps")  +
+      theme(legend.position = "none")
+g2
+```
+
+calculate the interval that contains on average the maximum number of steps.
+
+``` {r fig.width=6, fig.height=6}
+maxavg <- activity.no.na$interval[[which.max(activity.no.na$average)]]
+g2 + geom_vline(xintercept=maxavg, colour="yellow", linetype = "longdash")
+```
+
+``` {r}
+## printing exact interval
+maxavg
+```
 ## Imputing missing values
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
 
+1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+``` {r}
+narows <- nrow(activity) - nrow(activity.no.na)
+narows
+```
 
+2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+``` {r}
+
+activity.imputed <- activity
+impute <- function (df) {
+  for (i in 1:nrow(df)) {
+  if (is.na(df$steps[i])) 
+    df$steps[i] <- mean(df$steps,na.rm=TRUE)
+  }
+  df
+}
+
+``` 
+
+3.Create a new dataset that is equal to the original dataset but with the missing data filled in.
+``` {r}
+activity.imputed.org <- impute(activity.imputed)
+summary(activity.imputed)
+```
+
+4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+``` {r fig.width=6, fig.height=6}
+activity.imputed <- data.table(activity.imputed.org)
+activity.imputed <- activity.imputed[,list(average=mean(steps)),by=interval]
+str(activity.imputed)
+g2 <- ggplot(activity.imputed, aes(interval, average, colour=interval) ) +
+      geom_bar(stat="identity") +
+      xlab("Interval") +
+      ylab("Average nr of steps")  +
+      theme(legend.position = "none")
+g2
+```
+
+``` {r fig.width=6, fig.height=6}
+maxavg2 <- activity.imputed$interval[[which.max(activity.imputed$average)]]
+g2 + geom_vline(xintercept=maxavg2, colour="yellow", linetype = "longdash")
+``` 
+
+Printing the maximum average on steps
+``` {r}
+maxavg2
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+``` {r fig.width=6, fig.height=6}
+activity.imputed <- data.table(activity.imputed.org)
+activity.imputed$weekday <- !(as.POSIXlt(activity.imputed$date)$wd %in% c(0,1))
+activity.imputed$average <- activity.imputed[,list(average=mean(steps)),by=interval]$average
+g3 <- ggplot(activity.imputed, aes(x=interval, y=average, group=weekday, colour=interval) ) +
+      geom_bar(stat="identity") +
+      xlab("Interval") +
+      ylab("Average nr of steps")  +
+      ## TODO change facet labels
+      labs(title = "Difference activity Weekday (FALSE) or Weekend (TRUE)") +
+      theme(legend.position = "none") +
+      facet_grid(weekday ~ .)
+g3
+```
+
+# ``` {r, echo=FALSE, results='hide'}
+# library(knitr)
+# knit2html("PA1_template.Rmd”)
+# browseURL("PA1_template.html”)
+# ```
+
+A first glance at the data shows that there is more activity in the weekend days.
+
