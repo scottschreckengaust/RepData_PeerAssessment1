@@ -33,12 +33,7 @@ activity$date <- as.Date(activity$date, format="%Y-%m-%d")
 ```
 
 ## What is mean total number of steps taken per day?
-1. Make a histogram of the total number of steps taken each day
-2. Calculate and report the mean and median total number of steps taken per day
-
-``` {r fig.width=6, fig.height=6}
-library(ggplot2)
-
+``` {r}
 # Remove NAs.
 activity.nona <- subset(activity,!is.na(steps)) 
 
@@ -48,6 +43,11 @@ activity.nona <- data.table(activity.nona)
 # Add up the steps for each date.
 activity.countofstepsperday <- activity.nona[,list(sum=sum(steps)),by=date]
 
+```
+
+1. Make a histogram of the total number of steps taken each day
+2. Calculate and report the mean and median total number of steps taken per day
+``` {r}
 # Calculate the mean of the steps taken.
 mean.of.steps.taken = mean(activity.countofstepsperday$sum) ## calculate mean from sums
 mean.of.steps.taken
@@ -55,38 +55,18 @@ mean.of.steps.taken
 # Calculate the median of the steps taken.
 median.of.steps.taken = median(activity.countofstepsperday$sum) ## calculate median from sums
 median.of.steps.taken
+```
 
+``` {r fig.width=6, fig.height=6}
+library(ggplot2)
+g <- ggplot(activity.countofstepsperday, aes(date, sum)) 
 ## It appears mean and median values are very close
-g <- ggplot(activity.countofstepsperday, aes(date, sum)) +
-       geom_bar(stat="identity", aes(fill="darkblue", colour="red")) +
-       xlab("Date") +
-       ylab("Total steps") +
-       theme(legend.position = "none") + 
-       geom_line(aes(y=mean.of.steps.taken, col="blue")) +
-       geom_line(aes(y=median.of.steps.taken, col="black"))  
-
 mean.steps <- data.frame(yintercept=mean.of.steps.taken, mean=factor(mean.of.steps.taken))
 median.steps <- data.frame(yintercept=median.of.steps.taken, median=factor(median.of.steps.taken))
 
-g + geom_histogram(stat="identity", y=sum, aes(fill=sum)) + xlab("Date") + ylab("Number of Steps") + theme(legend.position = "right", legend.title = element_text(), axis.text.x = element_text(angle=90)) 
-+ geom_hline(aes(yintercept=yintercept, linetype=mean), data=mean.steps, show_guide=TRUE)
-
-+ geom_hline(aes(yintercept=yintercept, linetype=median), data=median.steps, show_guide=TRUE)
-
-
 g + geom_histogram(stat="identity", y=sum, aes(fill=sum)) + xlab("Date") + 
     ylab("Number of Steps") + theme(legend.position = "right", 
-    legend.title = element_text(), axis.text.x = element_text(angle=90)) + 
-    geom_hline(aes(yintercept=yintercept, linetype=mean), 
-    data=mean.steps, show_guide=TRUE) +
-    
-    geom_hline(aes(yintercept=yintercept, linetype=median), 
-    data=median.steps, show_guide=TRUE) + scale_colour_manual(values=c("mean", "median"))
-
-
-
-
-g
+    legend.title = element_text(), axis.text.x = element_text(angle=90))
 ```
 
 
@@ -106,7 +86,7 @@ str(activity.no.na)
 g2 <- ggplot(activity.no.na, aes(interval, average, colour=interval) ) +
       geom_bar(stat="identity") +
       xlab("Interval") +
-      ylab("Average nr of steps")  +
+      ylab("Average number of steps")  +
       theme(legend.position = "none")
 g2
 ```
