@@ -220,11 +220,11 @@ activity.maxavg2
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ``` {r fig.width=6, fig.height=6}
-activity.imputedframe$weekday <- !(as.POSIXlt(activity.imputedframe$date)$wd %in% c(0,1))
+activity.imputedframe$weekday <- !(as.POSIXlt(activity.imputedframe$date)$wd %in% c(0,6))
 activity.imputedframe$average <- activity.imputedframe[,list(average=mean(steps)),
     by=interval]$average
-g5 <- ggplot(activity.imputedframe, aes(x=interval, y=average, group=weekday, colour=average) ) +
-      geom_bar(stat="identity") +
+g5 <- ggplot(activity.imputedframe, aes(x=interval, y=average)) +
+      geom_line() +
       xlab("5 minute interval") +
       ylab("Average Number of Steps")  +
       labs(title = "Activity for Weekday (FALSE) verse Weekend (TRUE)") +
@@ -233,5 +233,5 @@ g5 <- ggplot(activity.imputedframe, aes(x=interval, y=average, group=weekday, co
 g5
 ```
 
-**There appears more activity on the weekend days, but the pattern of is similiar
-over the daily 24-hour interval steps.**
+**There is no disquishing of the weekend verse weekday pattern over the
+daily 24-hour interval steps.**

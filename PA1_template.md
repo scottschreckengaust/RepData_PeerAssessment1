@@ -42,7 +42,7 @@ print(xsummary, type="html")
 ```
 
 <!-- html table generated in R 3.1.0 by xtable 1.7-3 package -->
-<!-- Sun Jul 20 15:52:05 2014 -->
+<!-- Sun Jul 20 16:15:28 2014 -->
 <TABLE border=1>
 <TR> <TH>  </TH> <TH>     steps </TH> <TH>     date </TH> <TH>    interval </TH>  </TR>
   <TR> <TD align="right"> 1 </TD> <TD> Min.   :  0.0   </TD> <TD> Length:17568       </TD> <TD> Min.   :   0   </TD> </TR>
@@ -337,11 +337,11 @@ activity.maxavg2
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```r
-activity.imputedframe$weekday <- !(as.POSIXlt(activity.imputedframe$date)$wd %in% c(0,1))
+activity.imputedframe$weekday <- !(as.POSIXlt(activity.imputedframe$date)$wd %in% c(0,6))
 activity.imputedframe$average <- activity.imputedframe[,list(average=mean(steps)),
     by=interval]$average
-g5 <- ggplot(activity.imputedframe, aes(x=interval, y=average, group=weekday, colour=average) ) +
-      geom_bar(stat="identity") +
+g5 <- ggplot(activity.imputedframe, aes(x=interval, y=average)) +
+      geom_line() +
       xlab("5 minute interval") +
       ylab("Average Number of Steps")  +
       labs(title = "Activity for Weekday (FALSE) verse Weekend (TRUE)") +
@@ -352,5 +352,5 @@ g5
 
 ![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
-**There appears more activity on the weekend days, but the pattern of is similiar
-over the daily 24-hour interval steps.**
+**There is no disquishing of the weekend verse weekday pattern over the
+daily 24-hour interval steps.**
